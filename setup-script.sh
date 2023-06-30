@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # Variables
-resourceGroup="nd081-project-04-azure-performance-rg"
-location="eastus"
-osType="UbuntuLTS"
+resourceGroup="nd081-project-04-azure-performance"
+location="westeurope"
+osType="Ubuntu2204"
 vmssName="udacity-vmss"
 adminName="udacityadmin"
 storageAccount="udacitydiag$RANDOM"
@@ -14,7 +14,7 @@ nsgName="$vmssName-nsg"
 vnetName="$vmssName-vnet"
 subnetName="$vnetName-subnet"
 probeName="tcpProbe"
-vmSize="Standard_B1s"
+vmSize="Standard_D2as_v4"
 storageType="Standard_LRS"
 
 # Create resource group. 
@@ -64,12 +64,13 @@ az vmss create \
   --vnet-name $vnetName \
   --backend-pool-name $bePoolName \
   --storage-sku $storageType \
+  --lb-sku Standard \
   --load-balancer $lbName \
   --custom-data cloud-init.txt \
   --upgrade-policy-mode automatic \
   --admin-username $adminName \
   --generate-ssh-keys \
-  --verbose 
+  --verbose
 
 echo "VM scale set created: $vmssName"
 
