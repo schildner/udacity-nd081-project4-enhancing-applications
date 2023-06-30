@@ -31,12 +31,12 @@ logger = logging.getLogger(__name__)
 # Setup exporter
 exporter = metrics_exporter.new_metrics_exporter(
     enable_standard_metrics=True,
-    connection_string="InstrumentationKey=a6ad53cc-9964-40b7-8b03-d274e3eadefa")
+    connection_string="InstrumentationKey=53e31fe4-126a-4345-bd90-0c9dd7206f48")
 
 # Tracing
 # Setup tracer
 tracer = Tracer(
-    exporter=AzureExporter(connection_string="InstrumentationKey=a6ad53cc-9964-40b7-8b03-d274e3eadefa"),
+    exporter=AzureExporter(connection_string="InstrumentationKey=53e31fe4-126a-4345-bd90-0c9dd7206f48"),
     sampler=ProbabilitySampler(1.0),
 )
 
@@ -46,7 +46,7 @@ app = Flask(__name__)
 # Setup flask middleware
 middleware = FlaskMiddleware(
     app,
-    exporter=AzureExporter(connection_string="InstrumentationKey=a6ad53cc-9964-40b7-8b03-d274e3eadefa"),
+    exporter=AzureExporter(connection_string="InstrumentationKey=53e31fe4-126a-4345-bd90-0c9dd7206f48"),
     sampler=ProbabilitySampler(rate=1.0),
 )
 
