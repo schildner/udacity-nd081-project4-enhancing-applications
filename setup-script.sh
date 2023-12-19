@@ -17,10 +17,7 @@ probeName="tcpProbe"
 vmSize="Standard_D2as_v4"
 storageType="Standard_LRS"
 
-# Create resource group. 
-# This command will not work for the Cloud Lab users. 
-# Cloud Lab users can comment this command and 
-# use the existing Resource group name, such as, resourceGroup="cloud-demo-153430" 
+# Create resource group.
 echo "STEP 0 - Creating resource group $resourceGroup..."
 
 az group create \
@@ -70,7 +67,11 @@ az vmss create \
   --upgrade-policy-mode automatic \
   --admin-username $adminName \
   --generate-ssh-keys \
+  --orchestration-mode Uniform \
   --verbose
+
+# created vmss with  "orchestrationMode": "Flexible" (default),
+# this results in inability to retrieve public IP addresses of the instances!
 
 echo "VM scale set created: $vmssName"
 

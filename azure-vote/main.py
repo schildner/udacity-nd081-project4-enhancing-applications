@@ -10,7 +10,7 @@ from datetime import datetime
 # App Insights
 # Import required libraries for App Insights
 from opencensus.ext.azure import metrics_exporter
-from opencensus.ext.azure.log_exporter import AzureLogHandler
+from opencensus.ext.azure.log_exporter import AzureLogHandler, AzureEventHandler
 from opencensus.ext.azure.trace_exporter import AzureExporter
 from opencensus.ext.flask.flask_middleware import FlaskMiddleware
 
@@ -22,18 +22,35 @@ from opencensus.tags import tag_map as tag_map_module
 
 from opencensus.trace.tracer import Tracer
 from opencensus.trace.samplers import ProbabilitySampler
+from opencensus.trace import config_integration
+
+
+APP_INSIGHTS_CONN_STRING = 'InstrumentationKey=a2f9d6ad-4db7-4d17-b39b-c44a2ca711b6;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/'
 
 # Logging
 # Setup logger
+config_integration.trace_integrations(['logging'])
+config_integration.trace_integrations(['requests'])
 logger = logging.getLogger(__name__)
 
-APP_INSIGHTS_CONN_STRING = 'InstrumentationKey=a2f9d6ad-4db7-4d17-b39b-c44a2ca711b6'
+handler = AzureLogHandler(connection_string=APP_INSIGHTS_CONN_STRING)
+handler.setFormatter(logging.Formatter('%(traceId)s %(spanId)s %(message)s'))
+logger.addHandler(handler)
+
+logger.addHandler(AzureEventHandler(connection_string=APP_INSIGHTS_CONN_STRING))
+logger.setLevel(logging.INFO)
+
+stats = stats_module.stats
+view_manager = stats.view_manager
+
 
 # Metrics
 # Setup exporter
 exporter = metrics_exporter.new_metrics_exporter(
     enable_standard_metrics=True,
     connection_string=APP_INSIGHTS_CONN_STRING)
+
+view_manager.register_exporter(exporter)
 
 # Tracing
 # Setup tracer
@@ -93,14 +110,18 @@ def index():
         # Get current values
         vote1 = r.get(button1).decode('utf-8')
         # use tracer object to trace cat vote
-        tracer.span(name="Cats Vote")
+        with tracer.span(name="Cats Vote") as span:
+            print("Cats Vote")
 
         vote2 = r.get(button2).decode('utf-8')
         # use tracer object to trace dog vote
-        tracer.span(name="Dogs Vote")
+        with tracer.span(name="Dogs Vote") as span:
+            print("Dogs Vote")
 
         # Return index with values
-        return render_template("index.html", value1=int(vote1), value2=int(vote2), button1=button1, button2=button2, title=title)
+        return render_template("index.html", title=title,
+                               value1=int(vote1), value2=int(vote2),
+                               button1=button1, button2=button2)
 
     elif request.method == 'POST':
 
@@ -119,7 +140,9 @@ def index():
             # use logger object to log dog vote
             logger.info('Dogs Vote', extra=properties)
 
-            return render_template("index.html", value1=int(vote1), value2=int(vote2), button1=button1, button2=button2, title=title)
+            return render_template("index.html", title=title,
+                                   value1=int(vote1), value2=int(vote2),
+                                   button1=button1, button2=button2)
 
         else:
 
@@ -132,7 +155,9 @@ def index():
             vote2 = r.get(button2).decode('utf-8')
 
             # Return results
-            return render_template("index.html", value1=int(vote1), value2=int(vote2), button1=button1, button2=button2, title=title)
+            return render_template("index.html", title=title,
+                                   value1=int(vote1), value2=int(vote2),
+                                   button1=button1, button2=button2)
 
 
 if __name__ == "__main__":
