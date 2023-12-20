@@ -31,11 +31,11 @@ config_integration.trace_integrations(['logging'])
 config_integration.trace_integrations(['requests'])
 # Standard Logging
 logger = logging.getLogger(__name__)
-handler = AzureLogHandler(connection_string='InstrumentationKey=[your-guid]')
+handler = AzureLogHandler(connection_string='InstrumentationKey=a2f9d6ad-4db7-4d17-b39b-c44a2ca711b6;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/)')
 handler.setFormatter(logging.Formatter('%(traceId)s %(spanId)s %(message)s'))
 logger.addHandler(handler)
-# Logging custom Events 
-logger.addHandler(AzureEventHandler(connection_string='InstrumentationKey=[your-guid]'))
+# Logging custom Events
+logger.addHandler(AzureEventHandler(connection_string='InstrumentationKey=a2f9d6ad-4db7-4d17-b39b-c44a2ca711b6;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/)'))
 # Set the logging level
 logger.setLevel(logging.INFO)
 
