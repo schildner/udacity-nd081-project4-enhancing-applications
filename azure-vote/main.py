@@ -8,66 +8,35 @@ import logging
 from datetime import datetime
 
 # App Insights
-# Import required libraries for App Insights
+from opencensus.ext.azure.log_exporter import AzureLogHandler
 from opencensus.ext.azure import metrics_exporter
-from opencensus.ext.azure.log_exporter import AzureLogHandler, AzureEventHandler
-from opencensus.ext.azure.trace_exporter import AzureExporter
-from opencensus.ext.flask.flask_middleware import FlaskMiddleware
-
 from opencensus.stats import aggregation as aggregation_module
 from opencensus.stats import measure as measure_module
 from opencensus.stats import stats as stats_module
 from opencensus.stats import view as view_module
 from opencensus.tags import tag_map as tag_map_module
-
-from opencensus.trace.tracer import Tracer
+from opencensus.ext.azure.trace_exporter import AzureExporter
 from opencensus.trace.samplers import ProbabilitySampler
-from opencensus.trace import config_integration
+from opencensus.trace.tracer import Tracer
+from opencensus.ext.flask.flask_middleware import FlaskMiddleware
 
-
-APP_INSIGHTS_CONN_STRING = 'InstrumentationKey=a2f9d6ad-4db7-4d17-b39b-c44a2ca711b6;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/'
 
 # Logging
-# Setup logger
-config_integration.trace_integrations(['logging'])
-config_integration.trace_integrations(['requests'])
 logger = logging.getLogger(__name__)
 
-handler = AzureLogHandler(connection_string=APP_INSIGHTS_CONN_STRING)
-handler.setFormatter(logging.Formatter('%(traceId)s %(spanId)s %(message)s'))
-logger.addHandler(handler)
-
-logger.addHandler(AzureEventHandler(connection_string=APP_INSIGHTS_CONN_STRING))
-logger.setLevel(logging.INFO)
-
-stats = stats_module.stats
-view_manager = stats.view_manager
-
-
 # Metrics
-# Setup exporter
 exporter = metrics_exporter.new_metrics_exporter(
     enable_standard_metrics=True,
-    connection_string=APP_INSIGHTS_CONN_STRING)
-
-view_manager.register_exporter(exporter)
+    connection_string="InstrumentationKey=a2f9d6ad-4db7-4d17-b39b-c44a2ca711b6;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/)")
 
 # Tracing
-# Setup tracer
-tracer = Tracer(
-    exporter=AzureExporter(connection_string=APP_INSIGHTS_CONN_STRING),
-    sampler=ProbabilitySampler(1.0),
-)
+my_exporter = AzureExporter(connection_string="InstrumentationKey=a2f9d6ad-4db7-4d17-b39b-c44a2ca711b6;IngestionEndpoint=https://westeurope-5.in.applicationinsights.azure.com/;LiveEndpoint=https://westeurope.livediagnostics.monitor.azure.com/)")
+tracer = Tracer(exporter=my_exporter, sampler=ProbabilitySampler(1.0))
 
 app = Flask(__name__)
 
 # Requests
-# Setup flask middleware
-middleware = FlaskMiddleware(
-    app,
-    exporter=AzureExporter(connection_string=APP_INSIGHTS_CONN_STRING),
-    sampler=ProbabilitySampler(rate=1.0),
-)
+middleware = FlaskMiddleware(app, exporter=my_exporter, sampler=ProbabilitySampler(rate=1.0))
 
 # Load configurations from environment or config file
 app.config.from_pyfile('config_file.cfg')
@@ -91,6 +60,25 @@ else:
 # Redis Connection
 r = redis.Redis()
 
+"""
+# The commented section below is used while deploying the application with two separate containers - 
+# One container for Redis and another for the frontend. 
+
+# Redis configurations
+redis_server = os.environ['REDIS']
+
+try:
+    if "REDIS_PWD" in os.environ:
+        r = redis.StrictRedis(host=redis_server,
+                        port=6379,
+                        password=os.environ['REDIS_PWD'])
+    else:
+        r = redis.Redis(redis_server)
+    r.ping()
+except redis.ConnectionError:
+    exit('Failed to connect to Redis, terminating.')
+"""
+
 # Change title to host name to demo NLB
 if app.config['SHOWHOST'] == "true":
     title = socket.gethostname()
@@ -109,14 +97,10 @@ def index():
 
         # Get current values
         vote1 = r.get(button1).decode('utf-8')
-        # use tracer object to trace cat vote
-        with tracer.span(name="Cats Vote") as span:
-            print("Cats Vote")
+        tracer.span(name="Cats Vote")
 
         vote2 = r.get(button2).decode('utf-8')
-        # use tracer object to trace dog vote
-        with tracer.span(name="Dogs Vote") as span:
-            print("Dogs Vote")
+        tracer.span(name="Dogs Vote")
 
         # Return index with values
         return render_template("index.html", title=title,
