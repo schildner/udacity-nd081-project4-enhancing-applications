@@ -5,11 +5,9 @@ resourceGroup="nd081-project-04-azure-performance"
 clusterName="udacity-cluster"
 
 # Install aks cli
-echo "Installing AKS CLI"
-
-sudo az aks install-cli
-
-echo "AKS CLI installed"
+# echo "Installing AKS CLI"
+# sudo az aks install-cli
+# echo "AKS CLI installed"
 
 # Create AKS cluster
 echo "Step 1 - Creating AKS cluster $clusterName"
